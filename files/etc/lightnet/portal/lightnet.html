@@ -189,7 +189,7 @@
       var p = (v || '').replace(/\D/g, '');
       if (p.startsWith('255')) p = '0' + p.slice(3);
       var pref = p.slice(0, 3);
-      if (['074', '075', '076', '079'].indexOf(pref) >= 0) return 'Mpesa';
+      if (['072', '074', '075', '076', '079'].indexOf(pref) >= 0) return 'Mpesa';
       if (['065', '067', '071', '077'].indexOf(pref) >= 0) return 'Tigo';
       if (['068', '069', '078'].indexOf(pref) >= 0) return 'Airtel';
       if (['061', '062'].indexOf(pref) >= 0) return 'Halopesa';
