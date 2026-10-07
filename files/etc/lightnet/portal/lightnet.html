@@ -185,12 +185,18 @@
       $('supportTel').href = 'tel:' + num;
     }
 
-    function detectProvider(v) {
+    function localPhone(v) {
       var p = (v || '').replace(/\D/g, '');
       if (p.startsWith('255')) p = '0' + p.slice(3);
-      var pref = p.slice(0, 3);
+      return p;
+    }
+    function validTzPhone(v) {
+      return /^0[67]\d{8}$/.test(localPhone(v));
+    }
+    function detectProvider(v) {
+      var pref = localPhone(v).slice(0, 3);
       if (['072', '074', '075', '076', '079'].indexOf(pref) >= 0) return 'Mpesa';
-      if (['065', '067', '071', '077'].indexOf(pref) >= 0) return 'Tigo';
+      if (['065', '067', '070', '071', '077'].indexOf(pref) >= 0) return 'Tigo';
       if (['068', '069', '078'].indexOf(pref) >= 0) return 'Airtel';
       if (['061', '062'].indexOf(pref) >= 0) return 'Halopesa';
       return '';
@@ -223,7 +229,9 @@
     }
     $('phone').addEventListener('input', function () {
       var d = detectProvider(this.value);
-      $('netHint').textContent = d ? ('Mtandao: ' + d) : '';
+      if (d) $('netHint').textContent = 'Mtandao: ' + d;
+      else if (validTzPhone(this.value)) $('netHint').textContent = 'Tutagundua mtandao';
+      else $('netHint').textContent = '';
     });
 
     function openPay(plan) {
@@ -314,16 +322,18 @@
       $('payErr').textContent = '';
       if (!selectedPlan) return false;
       var phone = $('phone').value.trim();
+      if (!validTzPhone(phone)) { $('payErr').textContent = 'Weka namba sahihi ya simu'; return false; }
       var provider = detectProvider(phone);
-      if (!provider) { $('payErr').textContent = 'Weka namba sahihi ya simu'; return false; }
       lock(true); setStatus('Inatuma ombi…');
       try {
+        var body = {
+          owner_id: Number(OWNER), site_id: Number(SITE || 0),
+          plan_id: Number(selectedPlan.id), phone: phone, client_mac: MAC
+        };
+        if (provider) body.provider = provider;
         var r = await fetch(API + '/api/buy', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            owner_id: Number(OWNER), site_id: Number(SITE || 0),
-            plan_id: Number(selectedPlan.id), phone: phone, client_mac: MAC, provider: provider
-          })
+          body: JSON.stringify(body)
         });
         var data = await r.json();
         if (!data.success) throw new Error(data.error || 'Malipo yameshindikana');
