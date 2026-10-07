@@ -189,12 +189,31 @@
       if (['061', '062'].indexOf(pref) >= 0) return 'Halopesa';
       return '';
     }
-    function durationLabel(mins) {
+    function moneyTsh(n) {
+      return 'TSH ' + Number(n || 0).toLocaleString();
+    }
+    function planLabels(mins, fallbackName) {
       mins = Number(mins || 0);
-      if (!mins) return '';
-      if (mins < 60) return mins + ' dakika';
-      if (mins < 1440) { var h = Math.round(mins / 60); return h + (h === 1 ? ' saa' : ' masaa'); }
-      var d = Math.round(mins / 1440); return d + (d === 1 ? ' siku' : ' siku');
+      var known = {
+        240: { sw: 'Masaa Manne', en: '4 Hours' },
+        1440: { sw: 'Siku moja', en: '24 Hours' },
+        10080: { sw: 'Wiki', en: '7 Days' },
+        43200: { sw: 'Mwezi', en: '30 Days' }
+      };
+      if (known[mins]) return known[mins];
+      var sw, en;
+      if (!mins) return { sw: fallbackName || 'Kifurushi', en: fallbackName || '' };
+      if (mins < 60) { sw = mins + ' dakika'; en = mins + ' minutes'; }
+      else if (mins < 1440) {
+        var h = Math.round(mins / 60);
+        sw = h === 1 ? 'Saa 1' : ('Masaa ' + h);
+        en = h === 1 ? '1 Hour' : (h + ' Hours');
+      } else {
+        var d = Math.round(mins / 1440);
+        sw = d === 1 ? 'Siku moja' : ('Siku ' + d);
+        en = d === 1 ? '1 Day' : (d + ' Days');
+      }
+      return { sw: sw, en: fallbackName || en };
     }
     $('phone').addEventListener('input', function () {
       var d = detectProvider(this.value);
@@ -204,8 +223,9 @@
     function openPay(plan) {
       selectedPlan = plan;
       paying = false;
-      $('payTitle').textContent = plan.name || 'Kifurushi';
-      $('paySub').textContent = Number(plan.price_tzs || 0).toLocaleString() + ' TZS';
+      var labels = planLabels(plan.duration_minutes, plan.name);
+      $('payTitle').textContent = labels.sw;
+      $('paySub').textContent = labels.en + ' · ' + moneyTsh(plan.price_tzs);
       $('phone').value = '';
       $('netHint').textContent = '';
       $('payErr').textContent = '';
@@ -320,11 +340,11 @@
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'plan';
-        var dur = durationLabel(p.duration_minutes);
+        var labels = planLabels(p.duration_minutes, p.name);
         b.innerHTML = '<div><p class="plan-name"></p><p class="plan-meta"></p></div><div class="plan-price"></div>';
-        b.querySelector('.plan-name').textContent = p.name || 'Kifurushi';
-        b.querySelector('.plan-meta').textContent = dur;
-        b.querySelector('.plan-price').textContent = Number(p.price_tzs || 0).toLocaleString() + ' TZS';
+        b.querySelector('.plan-name').textContent = labels.sw;
+        b.querySelector('.plan-meta').textContent = labels.en;
+        b.querySelector('.plan-price').textContent = moneyTsh(p.price_tzs);
         b.onclick = function () { openPay(p); };
         box.appendChild(b);
       });
