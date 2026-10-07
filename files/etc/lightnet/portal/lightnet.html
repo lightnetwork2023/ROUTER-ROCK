@@ -128,7 +128,7 @@
 
     <div class="mac" id="clientMac"></div>
   </div></div>
-  <footer><div>Msaada: <a id="supportTel" href="tel:"></a></div></footer>
+  <footer><div>Msaada piga <a id="supportTel" href="tel:"></a></div></footer>
 
   <div class="scrim" id="scrim" onclick="if(event.target===this && !paying) closePay()">
     <div class="sheet" role="dialog" aria-modal="true">
@@ -178,6 +178,12 @@
     }
     function showErr(t) { $('errorMessage').textContent = t || ''; }
     function setStatus(t) { $('statusMsg').textContent = t || ''; }
+    function setHelpPhone(num) {
+      num = String(num || '').replace(/\s+/g, '');
+      if (!num) return;
+      $('supportTel').textContent = num;
+      $('supportTel').href = 'tel:' + num;
+    }
 
     function detectProvider(v) {
       var p = (v || '').replace(/\D/g, '');
@@ -351,7 +357,7 @@
     }
 
     async function boot() {
-      if (CFG.phone) { $('supportTel').textContent = CFG.phone; $('supportTel').href = 'tel:' + CFG.phone; }
+      setHelpPhone(CFG.phone);
       $('clientMac').textContent = MAC ? 'Kifaa: ' + MAC : '';
       var res = qs('res');
       if (res === 'failed') { notice('Code si sahihi, imeisha muda au inatumika kwenye kifaa kingine.', 'err'); showPane('code'); }
@@ -371,7 +377,7 @@
         var data = await r.json();
         if (!data.success) { showErr(data.error || 'Kiungo si sahihi'); return; }
         OWNER = data.owner.id; if (data.site) SITE = data.site.id;
-        if (data.owner.phone) { $('supportTel').textContent = data.owner.phone; $('supportTel').href = 'tel:' + data.owner.phone; }
+        setHelpPhone((data.site && data.site.contact_phone) || CFG.phone || (data.owner && data.owner.phone));
         renderPlans(data.plans);
       } catch (e) {
         $('plansEmpty').textContent = 'Vifurushi havikupakia';
